@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "punch-card-mcp": {
+      "command": "node",
+      "args": [".kiro/mcp/punch-card-mcp/server.js"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": ["ebcdic_decode", "validate_punch_pattern"]
+    }
+  }
+}

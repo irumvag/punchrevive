@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --haunted-black: #000000;
+  --toxic-green: #0f0;
+  --dark-green: #003300;
+}
+
+body {
+  background-color: var(--haunted-black);
+  color: var(--toxic-green);
+}
+
+/* CRT flicker effect for code displays */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+.crt-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+/* Blood drip effect for headings */
+.blood-drip {
+  text-shadow: 0 2px 4px rgba(255, 0, 0, 0.5);
+}
+
+/* Glow effect for interactive elements */
+.toxic-glow {
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+/* Haunted laboratory aesthetic utilities */
+.haunted-border {
+  border: 2px solid var(--toxic-green);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+.haunted-text {
+  color: var(--toxic-green);
+  font-family: var(--font-ibm-plex-mono);
+}
+
+.spooky-heading {
+  font-family: var(--font-creepster);
+  color: var(--toxic-green);
+  text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+}

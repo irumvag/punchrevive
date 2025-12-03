@@ -1,0 +1,7 @@
+name: resurrection-pipeline
+trigger: file-upload
+filter: "*.png,*.jpg,*.jpeg,*.webp"
+action: execute-command
+command: |
+  echo "⚡ Initiating resurrection sequence..."
+  npm run process-card -- {{uploaded_file}}

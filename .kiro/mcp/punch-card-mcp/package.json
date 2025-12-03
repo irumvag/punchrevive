@@ -1,0 +1,13 @@
+{
+  "name": "punch-card-mcp",
+  "version": "1.0.0",
+  "description": "Custom MCP server for punch card operations in PunchRevive",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["mcp", "punch-card", "ebcdic", "legacy-code"],
+  "author": "PunchRevive Team",
+  "license": "MIT"
+}

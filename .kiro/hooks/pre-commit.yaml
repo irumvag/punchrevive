@@ -1,0 +1,15 @@
+name: curse-detector
+trigger: pre-commit
+action: send-message
+message: |
+  🧛 The Curse Detector awakens...
+  
+  Analyze the staged files for code quality issues and provide feedback using horror-themed terminology:
+  - "Memory leak vampire detected" for memory issues
+  - "Infinite loop demon lurking" for potential infinite loops
+  - "Undefined variable ghost haunting" for undefined references
+  - "Type mismatch zombie shambling" for type errors
+  
+  If code is clean: "No curses detected - the code is pure ✨"
+  
+  Staged files: {{staged_files}}
