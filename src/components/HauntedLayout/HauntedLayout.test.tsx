@@ -43,10 +43,10 @@ describe('HauntedLayout', () => {
         <div>Content</div>
       </HauntedLayout>
     );
-    
-    // Should have no cobweb SVGs (only dust particles remain)
+
+    // Should have only the grass silhouette SVG (1), no cobweb SVGs
     const svgs = container.querySelectorAll('svg');
-    expect(svgs.length).toBe(0);
+    expect(svgs.length).toBe(1);
   });
 
   it('renders with different glow intensities', () => {

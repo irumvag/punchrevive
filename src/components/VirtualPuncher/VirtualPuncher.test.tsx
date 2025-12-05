@@ -128,18 +128,18 @@ describe('VirtualPuncher', () => {
     });
   });
 
-  it('loads demo pattern when Load Demo button is clicked', () => {
+  it('loads demo pattern when Reload Demo button is clicked', () => {
     const mockOnSubmit = vi.fn();
     render(<VirtualPuncher onSubmit={mockOnSubmit} />);
-    
+
     // Clear first
     const clearButton = screen.getByText(/Clear/);
     fireEvent.click(clearButton);
-    
-    // Load demo
-    const demoButton = screen.getByText(/Load Demo/);
+
+    // Reload demo
+    const demoButton = screen.getByText(/Reload Demo/);
     fireEvent.click(demoButton);
-    
+
     // Check that demo pattern is loaded (H in HELLO is at row 0, col 0)
     const cell = screen.getByTestId('cell-0-0');
     expect(cell).toHaveClass('punched');
