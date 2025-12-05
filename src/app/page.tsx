@@ -220,9 +220,9 @@ export default function Home() {
         >
           <motion.div
             className="text-center mb-6 md:mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8, ease: 'easeOut' }}
           >
             <motion.h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-creepster text-toxic-green mb-3"
@@ -245,7 +245,12 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 md:mb-8">
+          <motion.div
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 md:mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6, ease: 'easeOut' }}
+          >
             <motion.button
               onClick={() => setMode('upload')}
               disabled={isProcessing}
@@ -258,8 +263,12 @@ export default function Home() {
                 }
               `}
               style={{ boxShadow: mode === 'upload' ? '0 0 30px #0f0, 0 0 60px rgba(0,255,0,0.3)' : 'none' }}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              animate={{ y: [0, -3, 0] }}
+              transition={{
+                y: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+              }}
             >
               Upload Photo
             </motion.button>
@@ -275,31 +284,35 @@ export default function Home() {
                 }
               `}
               style={{ boxShadow: mode === 'virtual' ? '0 0 30px #0f0, 0 0 60px rgba(0,255,0,0.3)' : 'none' }}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              animate={{ y: [0, -3, 0] }}
+              transition={{
+                y: { duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 },
+              }}
             >
               Virtual Puncher
             </motion.button>
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {mode === 'upload' ? (
               <motion.div
                 key="upload"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 <UploadZone onUpload={handleUpload} acceptedFormats={['PNG', 'JPEG', 'WEBP']} maxSizeMB={10} />
               </motion.div>
             ) : (
               <motion.div
                 key="virtual"
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.4 }}
+                initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
               >
                 <VirtualPuncher onSubmit={handleVirtualSubmit} />
               </motion.div>

@@ -122,7 +122,20 @@ export default function ResurrectionAnimation({
             exit={{ opacity: 0 }}
           >
             <div className="punch-card-wrapper">
-              <img src={punchCardImage} alt="Punch card" className="punch-card-image" />
+              {punchCardImage && <img src={punchCardImage} alt="Punch card" className="punch-card-image" />}
+              {!punchCardImage && (
+                <div className="virtual-card-placeholder">
+                  <div className="card-pattern">
+                    {[...Array(12)].map((_, row) => (
+                      <div key={row} className="card-row">
+                        {[...Array(80)].map((_, col) => (
+                          <div key={col} className="card-hole" />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Lightning bolts */}
               <motion.svg
@@ -183,7 +196,20 @@ export default function ResurrectionAnimation({
               }}
               transition={{ duration: 1, ease: "easeInOut" }}
             >
-              <img src={punchCardImage} alt="Punch card" className="punch-card-image" />
+              {punchCardImage && <img src={punchCardImage} alt="Punch card" className="punch-card-image" />}
+              {!punchCardImage && (
+                <div className="virtual-card-placeholder">
+                  <div className="card-pattern">
+                    {[...Array(12)].map((_, row) => (
+                      <div key={row} className="card-row">
+                        {[...Array(80)].map((_, col) => (
+                          <div key={col} className="card-hole" />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
             <p className="stage-text">👻 The spirits awaken... 👻</p>
           </motion.div>
@@ -199,8 +225,21 @@ export default function ResurrectionAnimation({
             exit={{ opacity: 0 }}
           >
             <div className="punch-card-wrapper">
-              <img src={punchCardImage} alt="Punch card" className="punch-card-image" />
-              
+              {punchCardImage && <img src={punchCardImage} alt="Punch card" className="punch-card-image" />}
+              {!punchCardImage && (
+                <div className="virtual-card-placeholder">
+                  <div className="card-pattern">
+                    {[...Array(12)].map((_, row) => (
+                      <div key={row} className="card-row">
+                        {[...Array(80)].map((_, col) => (
+                          <div key={col} className="card-hole" />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Ectoplasm glow effect */}
               <motion.div
                 className="ectoplasm-glow"
@@ -371,6 +410,37 @@ export default function ResurrectionAnimation({
           border: 2px solid #0f0;
           border-radius: 8px;
           box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+
+        .virtual-card-placeholder {
+          width: 100%;
+          background: linear-gradient(180deg, #001a00 0%, #000800 100%);
+          border: 2px solid #0f0;
+          border-radius: 8px;
+          padding: 2rem;
+          box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+
+        .card-pattern {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          opacity: 0.7;
+        }
+
+        .card-row {
+          display: flex;
+          gap: 2px;
+          justify-content: center;
+        }
+
+        .card-hole {
+          width: 4px;
+          height: 8px;
+          background: #0f0;
+          border-radius: 1px;
+          opacity: 0.3;
+          box-shadow: 0 0 2px rgba(0, 255, 0, 0.5);
         }
 
         .lightning-svg {
