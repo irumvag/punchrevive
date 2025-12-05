@@ -7,9 +7,11 @@ import toast from 'react-hot-toast';
 import HauntedLayout from '@/src/components/HauntedLayout';
 import UploadZone from '@/src/components/UploadZone';
 import VirtualPuncher from '@/src/components/VirtualPuncher';
+import LineBasedPuncher from '@/src/components/LineBasedPuncher';
 import { uploadPunchCardImage, submitVirtualCard } from '@/src/utils/api-client';
+import type { LineBasedDeck } from '@/src/services/line-based-encoding.service';
 
-type Mode = 'upload' | 'virtual';
+type Mode = 'upload' | 'virtual' | 'line-based';
 
 export default function Home() {
   const router = useRouter();
@@ -62,6 +64,30 @@ export default function Home() {
     } catch (error) {
       console.error('Resurrection error:', error);
       toast.error(error instanceof Error ? error.message : 'Resurrection failed - please try again');
+      setIsProcessing(false);
+    }
+  };
+
+  const handleLineBasedSubmit = async (deck: LineBasedDeck) => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/resurrect-line-based', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deck }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.jobId) {
+        setShowSuccessModal(true);
+        setTimeout(() => router.push(`/results/${data.jobId}`), 1500);
+      } else {
+        throw new Error(data.message || 'Line-based resurrection failed');
+      }
+    } catch (error) {
+      console.error('Line-based resurrection error:', error);
+      toast.error(error instanceof Error ? error.message : 'Line-based resurrection failed - please try again');
       setIsProcessing(false);
     }
   };
@@ -123,7 +149,7 @@ export default function Home() {
           </div>
 
           {/* Mode Selection - Card Style */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <motion.button
               onClick={() => setMode('upload')}
               disabled={isProcessing}
@@ -183,11 +209,41 @@ export default function Home() {
                 />
               )}
             </motion.button>
+
+            <motion.button
+              onClick={() => setMode('line-based')}
+              disabled={isProcessing}
+              className={`
+                relative p-6 sm:p-8 rounded-lg border-2 transition-all duration-300
+                ${mode === 'line-based'
+                  ? 'bg-toxic-green/10 border-toxic-green'
+                  : 'bg-black/40 border-dark-green hover:border-toxic-green hover:bg-toxic-green/5'
+                }
+              `}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="text-center">
+                <div className="text-4xl mb-3">💾</div>
+                <h3 className="text-xl font-mono font-bold text-toxic-green mb-2">
+                  Line-Based
+                </h3>
+                <p className="text-sm font-mono text-dark-green">
+                  Encode full lines as bits
+                </p>
+              </div>
+              {mode === 'line-based' && (
+                <div
+                  className="absolute inset-0 rounded-lg border-2 border-toxic-green pointer-events-none"
+                  style={{ boxShadow: '0 0 30px rgba(0,255,0,0.5)' }}
+                />
+              )}
+            </motion.button>
           </div>
 
           {/* Content Area */}
           <AnimatePresence mode="wait">
-            {mode === 'upload' ? (
+            {mode === 'upload' && (
               <motion.div
                 key="upload"
                 initial={{ opacity: 0, y: 20 }}
@@ -197,7 +253,8 @@ export default function Home() {
               >
                 <UploadZone onUpload={handleUpload} acceptedFormats={['PNG', 'JPEG', 'WEBP']} maxSizeMB={10} />
               </motion.div>
-            ) : (
+            )}
+            {mode === 'virtual' && (
               <motion.div
                 key="virtual"
                 initial={{ opacity: 0, y: 20 }}
@@ -206,6 +263,17 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <VirtualPuncher onSubmit={handleVirtualSubmit} />
+              </motion.div>
+            )}
+            {mode === 'line-based' && (
+              <motion.div
+                key="line-based"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <LineBasedPuncher onSubmit={handleLineBasedSubmit} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -218,10 +286,9 @@ export default function Home() {
             transition={{ delay: 0.5 }}
           >
             <p className="text-xs sm:text-sm font-mono text-dark-green">
-              {mode === 'virtual'
-                ? 'Click "Load Demo" to try pre-made patterns like HELLO WORLD'
-                : 'Supports PNG, JPEG, and WEBP formats (max 10MB)'
-              }
+              {mode === 'upload' && 'Supports PNG, JPEG, and WEBP formats (max 10MB)'}
+              {mode === 'virtual' && 'Click "Load Demo" to try pre-made patterns like HELLO WORLD'}
+              {mode === 'line-based' && 'Each line encoded as 640 bits - try demo patterns: Python, JavaScript, FORTRAN'}
             </p>
           </motion.div>
         </motion.div>
