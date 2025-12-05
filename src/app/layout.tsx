@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Creepster } from "next/font/google";
+import { Creepster } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
-
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ['400', '500', '600', '700'],
-  subsets: ["latin"],
-  variable: '--font-ibm-plex-mono',
-});
 
 const creepster = Creepster({
   weight: '400',
@@ -28,7 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${ibmPlexMono.variable} ${creepster.variable} antialiased bg-haunted-black text-toxic-green font-mono`}
+        suppressHydrationWarning
+        className={`${creepster.variable} antialiased bg-haunted-black text-toxic-green font-mono`}
       >
         <div className="min-h-screen relative">
           {/* Haunted laboratory background */}

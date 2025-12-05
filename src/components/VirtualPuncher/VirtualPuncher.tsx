@@ -78,7 +78,7 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
   const loadSavedCards = useCallback(async () => {
     setLoadingSavedCards(true);
     try {
-      const response = await fetch('/api/cards?type=virtual');
+      const response = await fetch('/api/cards');
       if (!response.ok) throw new Error('Failed to load cards');
       const result = await response.json();
       setSavedCards(result.cards || []);
@@ -193,7 +193,7 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
         <h2 style={{
-          fontFamily: 'Creepster, cursive',
+          fontFamily: 'var(--font-creepster), cursive',
           fontSize: '2rem',
           color: '#0f0',
           margin: '0 0 0.5rem',
@@ -201,7 +201,7 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
         }}>
           ⌨️ Virtual Punch Card ⌨️
         </h2>
-        <p style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.85rem', color: '#003300', margin: '0 0 1rem' }}>
+        <p style={{ fontFamily: 'var(--font-ibm-plex-mono), monospace', fontSize: '0.85rem', color: '#003300', margin: '0 0 1rem' }}>
           Click cells to punch • 80 columns × 12 rows
         </p>
         <div style={{
@@ -213,8 +213,8 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
           borderRadius: '4px',
           border: '1px solid #003300',
         }}>
-          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem', color: '#003300' }}>Holes:</span>
-          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '1.2rem', fontWeight: 'bold', color: '#0f0', textShadow: '0 0 10px #0f0' }}>{punchCount}</span>
+          <span style={{ fontFamily: 'var(--font-ibm-plex-mono), monospace', fontSize: '0.8rem', color: '#003300' }}>Holes:</span>
+          <span style={{ fontFamily: 'var(--font-ibm-plex-mono), monospace', fontSize: '1.2rem', fontWeight: 'bold', color: '#0f0', textShadow: '0 0 10px #0f0' }}>{punchCount}</span>
         </div>
       </div>
 
@@ -450,7 +450,7 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
             border: '2px solid #ff0000',
             borderRadius: '6px',
             textAlign: 'center',
-            fontFamily: 'Creepster, cursive',
+            fontFamily: 'var(--font-creepster), cursive',
             fontSize: '1.4rem',
             color: '#ff0000',
             textShadow: '0 0 15px rgba(255,0,0,0.8)',

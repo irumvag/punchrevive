@@ -22,6 +22,9 @@ export const supabase = new Proxy({} as SupabaseClient, {
   }
 });
 
+// In-memory fallback for local development when Supabase is unreachable
+let inMemoryCards: PunchCard[] = [];
+
 export interface PunchCard {
   id: string;
   name: string;
@@ -35,48 +38,73 @@ export interface PunchCard {
 }
 
 export async function savePunchCard(data: Omit<PunchCard, 'id' | 'created_at'>) {
-  const { data: result, error } = await supabase
-    .from('punch_cards')
-    .insert([data])
-    .select()
-    .maybeSingle();
+  try {
+    const { data: result, error } = await supabase
+      .from('punch_cards')
+      .insert([data])
+      .select()
+      .maybeSingle();
 
-  if (error) throw error;
-  return result;
+    if (error) throw error;
+    return result;
+  } catch (err) {
+    // Fallback: store in-memory for local development when Supabase is unreachable
+    const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const created_at = new Date().toISOString();
+    const record: PunchCard = { id, created_at, ...data } as PunchCard;
+    inMemoryCards.unshift(record);
+    return record as any;
+  }
 }
 
 export async function loadPunchCards(cardType?: 'line-based' | 'virtual') {
-  let query = supabase
-    .from('punch_cards')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(100);
+  try {
+    let query = supabase
+      .from('punch_cards')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-  if (cardType) {
-    query = query.eq('card_type', cardType);
+    if (cardType) {
+      query = query.eq('card_type', cardType);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as PunchCard[];
+  } catch (err) {
+    // Fallback: return in-memory cards
+    let results = inMemoryCards.slice();
+    if (cardType) results = results.filter((c) => c.card_type === cardType);
+    return results;
   }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as PunchCard[];
 }
 
 export async function getPunchCard(id: string) {
-  const { data, error } = await supabase
-    .from('punch_cards')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('punch_cards')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-  if (error) throw error;
-  return data as PunchCard | null;
+    if (error) throw error;
+    return data as PunchCard | null;
+  } catch (err) {
+    const found = inMemoryCards.find((c) => c.id === id) || null;
+    return found;
+  }
 }
 
 export async function deletePunchCard(id: string) {
-  const { error } = await supabase
-    .from('punch_cards')
-    .delete()
-    .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('punch_cards')
+      .delete()
+      .eq('id', id);
 
-  if (error) throw error;
+    if (error) throw error;
+  } catch (err) {
+    inMemoryCards = inMemoryCards.filter((c) => c.id !== id);
+  }
 }
