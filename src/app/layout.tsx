@@ -23,12 +23,12 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${creepster.variable} antialiased bg-haunted-black text-toxic-green font-mono`}
+        className={`${creepster.variable} antialiased bg-haunted-image text-toxic-green font-mono`}
       >
         <div className="min-h-screen relative">
-          {/* Haunted laboratory background */}
-          <div className="fixed inset-0 z-0 opacity-20">
-            <div className="absolute inset-0 bg-gradient-to-b from-dark-green to-haunted-black"></div>
+          {/* Haunted laboratory overlay for text readability */}
+          <div className="fixed inset-0 z-0 opacity-40">
+            <div className="absolute inset-0 bg-haunted-black"></div>
           </div>
 
           {/* Content */}
