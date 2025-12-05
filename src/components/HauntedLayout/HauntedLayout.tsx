@@ -66,11 +66,23 @@ export default function HauntedLayout({
         }} />
       )}
 
-      {/* Animated background layers */}
+      {/* Haunted lab background image */}
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: 'radial-gradient(ellipse at center bottom, #001a00 0%, #000000 70%)',
+        backgroundImage: 'url(/haunted-lab.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        opacity: 0.6,
+        zIndex: 0,
+      }} />
+
+      {/* Dark overlay for readability */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.7) 100%)',
         zIndex: 0,
       }} />
 

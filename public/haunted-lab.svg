@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" fill="none">
+  <!-- Dark haunted sky -->
+  <rect width="1920" height="1080" fill="#000000"/>
+
+  <!-- Gradient atmosphere -->
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#001a00;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+
+    <radialGradient id="moonGlow" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#00ff00;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#00ff00;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#00ff00;stop-opacity:0" />
+    </radialGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#skyGradient)"/>
+
+  <!-- Creepy moon -->
+  <circle cx="1600" cy="200" r="80" fill="#001a00" opacity="0.6"/>
+  <circle cx="1600" cy="200" r="150" fill="url(#moonGlow)" opacity="0.2"/>
+
+  <!-- Mountains/hills silhouette -->
+  <path d="M0,700 Q400,600 800,700 T1600,700 L1920,700 L1920,1080 L0,1080 Z" fill="#000a00" opacity="0.8"/>
+  <path d="M0,800 Q300,700 600,800 T1200,800 T1920,800 L1920,1080 L0,1080 Z" fill="#001400" opacity="0.6"/>
+
+  <!-- Dead trees -->
+  <g opacity="0.7">
+    <!-- Tree 1 -->
+    <line x1="200" y1="650" x2="200" y2="450" stroke="#0a3d0a" stroke-width="8"/>
+    <line x1="200" y1="500" x2="150" y2="480" stroke="#0a3d0a" stroke-width="4"/>
+    <line x1="200" y1="520" x2="240" y2="490" stroke="#0a3d0a" stroke-width="4"/>
+    <line x1="200" y1="470" x2="170" y2="430" stroke="#0a3d0a" stroke-width="3"/>
+
+    <!-- Tree 2 -->
+    <line x1="1700" y1="700" x2="1700" y2="500" stroke="#0a3d0a" stroke-width="10"/>
+    <line x1="1700" y1="550" x2="1650" y2="520" stroke="#0a3d0a" stroke-width="5"/>
+    <line x1="1700" y1="580" x2="1750" y2="550" stroke="#0a3d0a" stroke-width="5"/>
+    <line x1="1700" y1="520" x2="1720" y2="480" stroke="#0a3d0a" stroke-width="4"/>
+
+    <!-- Tree 3 -->
+    <line x1="500" y1="720" x2="500" y2="580" stroke="#0a3d0a" stroke-width="6"/>
+    <line x1="500" y1="630" x2="470" y2="610" stroke="#0a3d0a" stroke-width="3"/>
+    <line x1="500" y1="650" x2="530" y2="625" stroke="#0a3d0a" stroke-width="3"/>
+  </g>
+
+  <!-- Old computer/lab equipment silhouettes -->
+  <g opacity="0.5">
+    <!-- Old mainframe computer -->
+    <rect x="100" y="850" width="200" height="150" fill="#001a00" stroke="#0a3d0a" stroke-width="2"/>
+    <rect x="120" y="870" width="50" height="40" fill="#00ff00" opacity="0.3"/>
+    <rect x="190" y="870" width="50" height="40" fill="#00ff00" opacity="0.3"/>
+    <circle cx="260" cy="950" r="15" fill="#00ff00" opacity="0.4"/>
+
+    <!-- Desk with equipment -->
+    <rect x="800" y="900" width="300" height="20" fill="#001400"/>
+    <rect x="850" y="800" width="120" height="100" fill="#001a00" stroke="#0a3d0a" stroke-width="2"/>
+    <rect x="870" y="820" width="80" height="60" fill="#00ff00" opacity="0.2"/>
+
+    <!-- Filing cabinets -->
+    <rect x="1500" y="850" width="80" height="150" fill="#001400" stroke="#0a3d0a" stroke-width="2"/>
+    <line x1="1500" y1="900" x2="1580" y2="900" stroke="#0a3d0a" stroke-width="1"/>
+    <line x1="1500" y1="950" x2="1580" y2="950" stroke="#0a3d0a" stroke-width="1"/>
+  </g>
+
+  <!-- Graves/tombstones -->
+  <g opacity="0.6">
+    <rect x="400" y="880" width="60" height="100" rx="30" fill="#0a3d0a"/>
+    <text x="430" y="920" font-family="serif" font-size="20" fill="#00ff00" opacity="0.3" text-anchor="middle">RIP</text>
+
+    <rect x="650" y="900" width="50" height="80" rx="25" fill="#0a3d0a"/>
+    <text x="675" y="935" font-family="serif" font-size="16" fill="#00ff00" opacity="0.3" text-anchor="middle">RIP</text>
+
+    <rect x="1200" y="890" width="55" height="90" rx="27" fill="#0a3d0a"/>
+    <text x="1227" y="928" font-family="serif" font-size="18" fill="#00ff00" opacity="0.3" text-anchor="middle">RIP</text>
+  </g>
+
+  <!-- Glowing windows -->
+  <g filter="url(#glow)">
+    <rect x="1300" y="750" width="40" height="60" fill="#00ff00" opacity="0.15"/>
+    <rect x="1360" y="750" width="40" height="60" fill="#00ff00" opacity="0.15"/>
+  </g>
+
+  <!-- Ground fog -->
+  <ellipse cx="960" cy="1000" rx="900" ry="80" fill="#00ff00" opacity="0.05"/>
+  <ellipse cx="400" cy="1020" rx="400" ry="60" fill="#00ff00" opacity="0.04"/>
+  <ellipse cx="1500" cy="1030" rx="500" ry="50" fill="#00ff00" opacity="0.04"/>
+</svg>
