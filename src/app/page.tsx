@@ -11,6 +11,8 @@ import LineBasedPuncher from '@/src/components/LineBasedPuncher';
 import { uploadPunchCardImage, submitVirtualCard } from '@/src/utils/api-client';
 import type { LineBasedDeck } from '@/src/services/line-based-encoding.service';
 
+export const dynamic = 'force-dynamic';
+
 type Mode = 'upload' | 'virtual' | 'line-based';
 
 export default function Home() {
