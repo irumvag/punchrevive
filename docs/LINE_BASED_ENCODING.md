@@ -174,10 +174,12 @@ For each deck, the system calculates:
    - Cards, bits, bytes, characters
    - Average line length
    - Detected language badge
-3. Card preview list:
+3. Visual punch card display:
    - Each card shows line number
    - Text preview (first 40 chars)
-   - Bit sequence preview
+   - **8×80 grid with punched holes** (green glowing cells for '1' bits, black for '0')
+   - Scrollable horizontal view for full card width
+   - Hole count displayed
 
 ### Resurrection
 1. Click "⚡ Resurrect Code ⚡"
@@ -234,9 +236,10 @@ Simple heuristics based on keywords:
 ### Card Preview
 Each encoded card shows:
 - Line number badge
-- Bit count (640)
+- Grid dimensions (8 rows × 80 columns)
 - Text preview (first 40 chars + ellipsis)
-- Bit sequence preview (first 160 bits)
+- **Visual punch card grid** with actual holes punched (green glowing cells)
+- Hole count (how many bits are '1')
 
 ### Statistics Panel
 Grid display with metrics:

@@ -58,11 +58,13 @@ After encoding, see:
 - Average line length
 - Detected language
 
-### 👁️ Preview
-View all your encoded cards:
-- Line numbers
-- Text preview
-- Bit sequence preview
+### 👁️ Visual Punch Cards
+View all your encoded cards as actual punch cards:
+- Card number badges
+- Text preview of the line
+- **8×80 grid with visual holes** (green glowing = punched, black = not punched)
+- Horizontal scroll for full card width
+- Hole count per card
 - 640 bits per card guaranteed
 
 ### ⚡ Resurrection
@@ -169,7 +171,11 @@ Both have their place! Traditional for authentic punch card simulation, Line-Bas
    └─────────┘
    Detected: Python
 
-6. Preview shows all 7 cards with bit sequences
+6. Preview shows all 7 cards as visual punch cards:
+   - Each card displays an 8×80 grid
+   - Green glowing holes where bits = '1'
+   - Black cells where bits = '0'
+   - Looks like real punch cards!
 
 7. Click "⚡ Resurrect Code ⚡"
 

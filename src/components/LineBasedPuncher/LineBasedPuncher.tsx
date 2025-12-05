@@ -175,36 +175,77 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
               )}
             </div>
 
-            {/* Card Preview */}
-            <div className="bg-black/60 border-2 border-dark-green rounded-lg p-4 max-h-96 overflow-y-auto">
-              <h3 className="text-lg font-creepster text-toxic-green mb-4 text-center sticky top-0 bg-black/90 py-2">
-                Encoded Cards Preview
+            {/* Card Preview - Visual Punch Cards */}
+            <div className="bg-black/60 border-2 border-dark-green rounded-lg p-4 max-h-[600px] overflow-y-auto">
+              <h3 className="text-lg font-creepster text-toxic-green mb-4 text-center sticky top-0 bg-black/90 py-2 z-10">
+                Virtual Punch Cards
               </h3>
-              <div className="space-y-3">
-                {deck.cards.map((card, index) => (
-                  <motion.div
-                    key={card.column}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-black/40 border border-dark-green rounded p-3"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-mono text-toxic-green font-bold">
-                        Line {card.column}
-                      </span>
-                      <span className="text-xs font-mono text-dark-green">
-                        {card.bits.length} bits
-                      </span>
-                    </div>
-                    <div className="text-xs font-mono text-toxic-green mb-2 break-all opacity-70">
-                      {card.preview}
-                    </div>
-                    <div className="text-xs font-mono text-dark-green break-all overflow-hidden" style={{ maxHeight: '3em' }}>
-                      {card.bits.slice(0, 160)}...
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="space-y-6">
+                {deck.cards.map((card, index) => {
+                  // Convert 640 bits to 8 rows × 80 columns grid
+                  const grid: boolean[][] = [];
+                  for (let row = 0; row < 8; row++) {
+                    grid[row] = [];
+                    for (let col = 0; col < 80; col++) {
+                      const bitIndex = row * 80 + col;
+                      grid[row][col] = card.bits[bitIndex] === '1';
+                    }
+                  }
+
+                  return (
+                    <motion.div
+                      key={card.column}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-gradient-to-b from-black/80 to-black border-2 border-toxic-green rounded-lg p-4"
+                      style={{ boxShadow: '0 0 20px rgba(0,255,0,0.2), inset 0 0 30px rgba(0,255,0,0.05)' }}
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-dark-green">
+                        <span className="text-sm font-mono text-toxic-green font-bold">
+                          Card #{card.column}
+                        </span>
+                        <span className="text-xs font-mono text-dark-green">
+                          8 rows × 80 columns
+                        </span>
+                      </div>
+
+                      {/* Line Preview */}
+                      <div className="text-xs font-mono text-toxic-green/70 mb-3 truncate">
+                        {card.preview}
+                      </div>
+
+                      {/* Visual Punch Card Grid */}
+                      <div className="overflow-x-auto pb-2">
+                        <div className="inline-block min-w-max">
+                          {grid.map((row, rowIndex) => (
+                            <div key={rowIndex} className="flex gap-[2px] mb-[2px]">
+                              {row.map((isPunched, colIndex) => (
+                                <div
+                                  key={`${rowIndex}-${colIndex}`}
+                                  className={`w-[10px] h-[10px] border rounded-sm transition-all ${
+                                    isPunched
+                                      ? 'bg-toxic-green border-toxic-green shadow-[0_0_6px_rgba(0,255,0,0.8)]'
+                                      : 'bg-black border-dark-green'
+                                  }`}
+                                  style={{
+                                    boxShadow: isPunched ? '0 0 6px #0f0' : 'none'
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Punch Count */}
+                      <div className="text-xs font-mono text-dark-green text-right mt-2 pt-2 border-t border-dark-green/30">
+                        {grid.flat().filter(Boolean).length} holes punched
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
