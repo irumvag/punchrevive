@@ -157,7 +157,6 @@ export default function SharedResultPage() {
               Original Punch Card
             </h2>
             <div className="flex justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={result.punchCardImage}
                 alt="Original punch card"

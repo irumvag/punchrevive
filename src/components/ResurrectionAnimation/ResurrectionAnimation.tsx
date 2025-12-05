@@ -22,24 +22,26 @@ export default function ResurrectionAnimation({
 
   // Initialize ghost moan sound effect
   useEffect(() => {
+    const sound = soundRef.current;
+
     // Create a simple ghost moan sound using Web Audio API oscillator
     // In production, this would load an actual audio file
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
+
     const playGhostMoan = () => {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 2);
-      
+
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 2);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 2);
     };
@@ -48,8 +50,8 @@ export default function ResurrectionAnimation({
     playGhostMoan();
 
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unload();
+      if (sound) {
+        sound.unload();
       }
     };
   }, []);
