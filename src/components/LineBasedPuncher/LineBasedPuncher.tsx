@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lineBasedEncodingService, LINE_BASED_DEMOS, type LineBasedDeck } from '@/src/services/line-based-encoding.service';
 import toast from 'react-hot-toast';
@@ -9,12 +9,26 @@ interface LineBasedPuncherProps {
   onSubmit: (deck: LineBasedDeck) => void;
 }
 
+interface SavedCard {
+  id: string;
+  name: string;
+  grid_data: boolean[][];
+  rows: number;
+  cols: number;
+  original_text: string | null;
+  card_type: 'line-based' | 'virtual';
+}
+
 export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
   const [sourceCode, setSourceCode] = useState('');
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [deck, setDeck] = useState<LineBasedDeck | null>(null);
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null);
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [loadingSavedCards, setLoadingSavedCards] = useState(false);
+  const [loadedCardText, setLoadedCardText] = useState<string | null>(null);
+  const [showLoadedCard, setShowLoadedCard] = useState(false);
 
   const handleLoadDemo = (demoKey: keyof typeof LINE_BASED_DEMOS) => {
     const demoCode = LINE_BASED_DEMOS[demoKey];
@@ -86,7 +100,65 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
     }
   };
 
+  const loadSavedCards = useCallback(async () => {
+    setLoadingSavedCards(true);
+    try {
+      const response = await fetch('/api/cards');
+      if (!response.ok) throw new Error('Failed to load cards');
+      const result = await response.json();
+      setSavedCards(result.cards || []);
+    } catch (error) {
+      console.error('Error loading saved cards:', error);
+      toast.error('Failed to load saved cards');
+    } finally {
+      setLoadingSavedCards(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSavedCards();
+  }, [loadSavedCards]);
+
+  const loadSavedCard = useCallback((cardId: string) => {
+    const card = savedCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    const grid: boolean[][] = Array.from({ length: 8 }, () => Array(80).fill(false));
+
+    for (let row = 0; row < card.rows && row < 8; row++) {
+      for (let col = 0; col < card.cols && col < 80; col++) {
+        grid[row][col] = card.grid_data[row]?.[col] || false;
+      }
+    }
+
+    const bits: string[] = [];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 80; col++) {
+        bits.push(grid[row][col] ? '1' : '0');
+      }
+    }
+
+    const singleCardDeck: LineBasedDeck = {
+      cards: [{
+        column: 1,
+        bits: bits.join(''),
+        preview: card.original_text || ''
+      }],
+      metadata: {
+        filename: card.name,
+        language: 'unknown'
+      }
+    };
+
+    setDeck(singleCardDeck);
+    setLoadedCardText(card.original_text);
+    setShowPreview(true);
+    setShowLoadedCard(true);
+    toast.success(`Loaded: ${card.name}`);
+  }, [savedCards]);
+
   const stats = deck ? lineBasedEncodingService.getDeckStats(deck) : null;
+  const lineBasedCards = savedCards.filter(c => c.card_type === 'line-based');
 
   return (
     <div className="w-full max-w-5xl mx-auto">
@@ -129,6 +201,32 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
           ))}
         </div>
       </div>
+
+      {/* Load Saved Cards */}
+      {lineBasedCards.length > 0 && (
+        <div className="mb-6">
+          <p className="text-sm font-mono text-toxic-green mb-3 text-center">
+            Load Saved Card:
+          </p>
+          <div className="flex justify-center">
+            <select
+              onChange={(e) => loadSavedCard(e.target.value)}
+              className="w-full max-w-md px-4 py-2 bg-black/60 border-2 border-dark-green text-toxic-green font-mono text-sm rounded focus:outline-none focus:border-toxic-green transition-colors"
+              disabled={loadingSavedCards}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                {loadingSavedCards ? 'Loading cards...' : 'Select a saved card...'}
+              </option>
+              {lineBasedCards.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Code Input */}
       <motion.div
@@ -303,6 +401,20 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
                 })}
               </div>
             </div>
+
+            {/* Decoded Text Display for Loaded Cards */}
+            {showLoadedCard && loadedCardText && (
+              <div className="bg-black/60 border-2 border-toxic-green rounded-lg p-6">
+                <h3 className="text-xl font-creepster text-toxic-green mb-4 text-center">
+                  Decoded Text
+                </h3>
+                <div className="bg-black/80 border border-dark-green rounded p-4">
+                  <pre className="text-toxic-green font-mono text-sm whitespace-pre-wrap break-words">
+                    {loadedCardText}
+                  </pre>
+                </div>
+              </div>
+            )}
 
             {/* Resurrect Button */}
             <motion.div
