@@ -34,14 +34,13 @@ export default function RootLayout({
           {/* Haunted laboratory background */}
           <div className="fixed inset-0 z-0 opacity-20">
             <div className="absolute inset-0 bg-gradient-to-b from-dark-green to-haunted-black"></div>
-            {/* Background decorative elements will be added in later tasks */}
           </div>
-          
+
           {/* Content */}
           <div className="relative z-10">
             {children}
           </div>
-          
+
           {/* Toast notifications with haunted theme */}
           <Toaster
             position="bottom-center"

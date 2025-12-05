@@ -24,10 +24,10 @@ const jobCache = new Map<string, ProcessStatusResponse>();
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ): Promise<NextResponse<ProcessStatusResponse>> {
   try {
-    const { jobId } = params;
+    const { jobId } = await params;
 
     // Check if job exists in cache
     if (jobCache.has(jobId)) {

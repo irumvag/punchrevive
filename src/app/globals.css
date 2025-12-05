@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --haunted-black: #000000;
+  --toxic-green: #00ff00;
+  --dark-green: #0a3d0a;
+  --blood-red: #ff0000;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.font-creepster {
+  font-family: var(--font-creepster), cursive;
+}
+
+.font-mono {
+  font-family: var(--font-ibm-plex-mono), monospace;
+}
+
+.bg-haunted-black {
+  background-color: var(--haunted-black);
+}
+
+.text-toxic-green {
+  color: var(--toxic-green);
+}
+
+.text-dark-green {
+  color: var(--dark-green);
+}
+
+.border-toxic-green {
+  border-color: var(--toxic-green);
+}
+
+.border-dark-green {
+  border-color: var(--dark-green);
+}

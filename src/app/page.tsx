@@ -21,13 +21,11 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Play ambient haunted sound on startup
+
     try {
       const AC = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AC();
-      
-      // Low rumbling ambient sound
+
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.connect(gain1);
@@ -39,8 +37,7 @@ export default function Home() {
       gain1.gain.linearRampToValueAtTime(0, ctx.currentTime + 3);
       osc1.start(ctx.currentTime);
       osc1.stop(ctx.currentTime + 3);
-      
-      // Ghost whisper overlay
+
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.connect(gain2);
@@ -56,7 +53,7 @@ export default function Home() {
     } catch {
       // Audio unavailable
     }
-    
+
     const timer = setTimeout(() => setShowIntro(false), 3500);
     return () => clearTimeout(timer);
   }, []);
@@ -73,7 +70,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Zombie error:', error);
-      toast.error(error instanceof Error ? error.message : '💀 Demon possessed the code—retry?');
+      toast.error(error instanceof Error ? error.message : 'Demon possessed the code—retry?');
       setIsProcessing(false);
     }
   };
@@ -81,7 +78,6 @@ export default function Home() {
   const handleVirtualSubmit = async (pattern: boolean[][]) => {
     setIsProcessing(true);
     try {
-      // Use local resurrection API (no AI key needed!)
       const response = await fetch('/api/resurrect-local', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +85,7 @@ export default function Home() {
       });
 
       const data = await response.json();
-      
+
       if (data.success && data.jobId) {
         setShowSuccessModal(true);
         setTimeout(() => router.push(`/results/${data.jobId}`), 1500);
@@ -98,7 +94,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Zombie error:', error);
-      toast.error(error instanceof Error ? error.message : '💀 Demon possessed the code—retry?');
+      toast.error(error instanceof Error ? error.message : 'Demon possessed the code—retry?');
       setIsProcessing(false);
     }
   };
@@ -109,16 +105,14 @@ export default function Home() {
 
   return (
     <HauntedLayout glowIntensity="high">
-      {/* Background Image */}
-      <div 
+      <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20"
-        style={{ 
+        style={{
           backgroundImage: 'url(/haunted-bg.jpg)',
           filter: 'brightness(0.3) contrast(1.3)'
         }}
       />
-      
-      {/* DRAMATIC INTRO */}
+
       <AnimatePresence>
         {showIntro && (
           <motion.div
@@ -134,7 +128,7 @@ export default function Home() {
               animate={{ opacity: [0, 0.8, 0, 0.6, 0, 0.4, 0] }}
               transition={{ duration: 2, times: [0, 0.1, 0.15, 0.2, 0.25, 0.3, 1] }}
             />
-            
+
             <div className="absolute inset-0 pointer-events-none opacity-20" style={{
               backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.1) 2px, rgba(0,255,0,0.1) 4px)',
             }} />
@@ -148,7 +142,7 @@ export default function Home() {
                 <motion.h1
                   className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-creepster text-toxic-green mb-4"
                   style={{ textShadow: '0 0 20px #0f0, 0 0 40px #0f0, 0 0 60px #0f0' }}
-                  animate={{ 
+                  animate={{
                     textShadow: [
                       '0 0 20px #0f0, 0 0 40px #0f0, 0 0 60px #0f0',
                       '0 0 40px #0f0, 0 0 80px #0f0, 0 0 120px #0f0',
@@ -168,7 +162,7 @@ export default function Home() {
                 transition={{ delay: 1.5, duration: 0.8 }}
                 style={{ textShadow: '0 0 10px #0f0' }}
               >
-                ⚡ RESURRECT THE DEAD CODE ⚡
+                RESURRECT THE DEAD CODE
               </motion.p>
 
               <motion.div
@@ -224,8 +218,7 @@ export default function Home() {
           animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? 50 : 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          {/* Header */}
-          <motion.div 
+          <motion.div
             className="text-center mb-6 md:mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -233,7 +226,7 @@ export default function Home() {
           >
             <motion.h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-creepster text-toxic-green mb-3"
-              animate={{ 
+              animate={{
                 textShadow: [
                   '0 0 10px #0f0, 0 0 20px #0f0, 0 0 30px #0f0',
                   '0 0 20px #0f0, 0 0 40px #0f0, 0 0 60px #0f0',
@@ -245,14 +238,13 @@ export default function Home() {
               PunchRevive
             </motion.h1>
             <p className="text-base sm:text-lg md:text-xl font-mono text-toxic-green mb-2" style={{ textShadow: '0 0 5px #0f0' }}>
-              🧛 Resurrect Dead Code from the Crypt 🧛
+              Resurrect Dead Code from the Crypt
             </p>
             <p className="text-xs sm:text-sm opacity-50 font-mono text-dark-green">
               Upload vintage punch cards or create virtual ones
             </p>
           </motion.div>
 
-          {/* Mode Toggle */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 md:mb-8">
             <motion.button
               onClick={() => setMode('upload')}
@@ -269,7 +261,7 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              ☠️ Upload Photo
+              Upload Photo
             </motion.button>
             <motion.button
               onClick={() => setMode('virtual')}
@@ -286,11 +278,10 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              🕳️ Virtual Puncher
+              Virtual Puncher
             </motion.button>
           </div>
 
-          {/* Content */}
           <AnimatePresence mode="wait">
             {mode === 'upload' ? (
               <motion.div
@@ -317,7 +308,6 @@ export default function Home() {
 
         </motion.div>
 
-        {/* Processing Overlay */}
         <AnimatePresence>
           {isProcessing && !showSuccessModal && (
             <motion.div
@@ -357,7 +347,6 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* Success Modal */}
         <AnimatePresence>
           {showSuccessModal && (
             <motion.div
