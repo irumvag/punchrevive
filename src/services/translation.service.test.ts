@@ -29,11 +29,16 @@ vi.mock('@anthropic-ai/sdk', () => {
   };
 });
 
+// Mock fetch for Ollama
+global.fetch = vi.fn();
+
 describe('TranslationService', () => {
   let service: TranslationService;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock Ollama to fail so tests use OpenAI/Claude
+    (global.fetch as any).mockRejectedValue(new Error('Ollama not available'));
     service = new TranslationService({
       openaiApiKey: 'test-openai-key',
       claudeApiKey: 'test-claude-key',

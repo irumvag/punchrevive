@@ -54,7 +54,20 @@ export default function ResultsPage() {
         }
 
         if (response.status === 'complete' && response.result) {
-          setResult(response.result);
+          // Transform local mode result to match expected format
+          const transformedResult: any = {
+            punchCardImage: '',
+            originalCode: response.result.originalCode || response.result.translatedCode,
+            originalLanguage: (response.result.originalLanguage || 'UNKNOWN') as LegacyLanguage,
+            translatedCode: response.result.translatedCode,
+            targetLanguage: (response.result.targetLanguage || 'Text') as ModernLanguage,
+            bugs: response.result.bugs || [],
+            resultId: jobId,
+            timestamp: new Date(response.result.timestamp || Date.now()),
+            exorcismReportText: response.result.exorcismReport, // Store text report
+          };
+          
+          setResult(transformedResult);
           setIsLoading(false);
         }
       } catch (err) {
@@ -185,7 +198,20 @@ export default function ResultsPage() {
 
         {/* Exorcism Report */}
         <div className="mb-8">
-          <ExorcismReport fixes={result.bugs} />
+          {result.bugs && result.bugs.length > 0 ? (
+            <ExorcismReport fixes={result.bugs} />
+          ) : (result as any).exorcismReportText ? (
+            <div className="max-w-4xl mx-auto px-4">
+              <div className="bg-black border-2 border-toxic-green rounded-lg p-6 shadow-lg shadow-toxic-green/30">
+                <h2 className="text-2xl font-creepster text-toxic-green mb-4 text-center">
+                  🧛 Resurrection Report 🧛
+                </h2>
+                <pre className="font-mono text-sm text-toxic-green whitespace-pre-wrap">
+                  {(result as any).exorcismReportText}
+                </pre>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Certificate Generator */}

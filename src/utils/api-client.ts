@@ -67,7 +67,13 @@ export async function uploadPunchCardImage(
  * Poll processing status for a job
  */
 export async function getProcessingStatus(jobId: string): Promise<ProcessingResponse> {
-  const response = await fetch(`/api/process/${jobId}`);
+  // Try results endpoint first (for local mode)
+  let response = await fetch(`/api/results/${jobId}`);
+  
+  // Fallback to process endpoint (for AI mode)
+  if (!response.ok && response.status === 404) {
+    response = await fetch(`/api/process/${jobId}`);
+  }
 
   if (!response.ok) {
     throw new Error('Failed to get processing status');

@@ -1,253 +1,490 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { UploadZoneProps } from '@/src/types/ui.types';
 
 /**
- * UploadZone Component
- * 
- * Handles drag-and-drop and camera capture for punch card images.
- * Provides visual feedback and validates file types and sizes.
- * 
- * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
+ * UploadZone - Dramatic drag-and-drop with haunted effects
  */
-export default function UploadZone({
-  onUpload,
-  acceptedFormats,
-  maxSizeMB,
-}: UploadZoneProps) {
+export default function UploadZone({ onUpload, acceptedFormats, maxSizeMB }: UploadZoneProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
 
-  // Detect mobile device on mount
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    };
-    checkMobile();
+  useEffect(() => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   }, []);
 
-  // Handle file upload with validation
+  const playSound = useCallback((type: 'drop' | 'error') => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'drop') {
+        // Thunder/ghost moan
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      } else {
+        // Error buzz
+        osc.type = 'square';
+        osc.frequency.value = 100;
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      }
+    } catch {
+      // Audio unavailable
+    }
+  }, []);
+
+  const triggerLightning = useCallback(() => {
+    setShowLightning(true);
+    playSound('drop');
+    setTimeout(() => setShowLightning(false), 150);
+    setTimeout(() => {
+      setShowLightning(true);
+      setTimeout(() => setShowLightning(false), 100);
+    }, 200);
+  }, [playSound]);
+
   const handleFileUpload = useCallback(async (file: File) => {
     setError(null);
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
-      // Validate file type
-      const validTypes = acceptedFormats.map(format => `image/${format.toLowerCase()}`);
+      const validTypes = acceptedFormats.map(f => `image/${f.toLowerCase()}`);
       if (!validTypes.includes(file.type)) {
-        throw new Error('This ancient artifact must be a PNG, JPEG, or WEBP image');
+        throw new Error('⚠️ This artifact must be PNG, JPEG, or WEBP');
+      }
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        throw new Error(`⚠️ File too large (max ${maxSizeMB}MB)`);
       }
 
-      // Validate file size
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-      if (file.size > maxSizeBytes) {
-        throw new Error(`This tome is too massive for resurrection (max ${maxSizeMB}MB)`);
-      }
+      triggerLightning();
 
-      // Simulate upload progress with spooky animation
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
+      const interval = setInterval(() => {
+        setUploadProgress(p => p >= 90 ? p : p + 15);
       }, 100);
 
       await onUpload(file);
-
-      clearInterval(progressInterval);
+      clearInterval(interval);
       setUploadProgress(100);
 
-      // Reset after successful upload
       setTimeout(() => {
         setIsUploading(false);
         setUploadProgress(0);
-      }, 500);
+      }, 300);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The spirits are restless - upload failed');
+      playSound('error');
+      setError(err instanceof Error ? err.message : '💀 Upload failed');
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [onUpload, acceptedFormats, maxSizeMB]);
+  }, [onUpload, acceptedFormats, maxSizeMB, triggerLightning, playSound]);
 
-  // Dropzone configuration
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      handleFileUpload(acceptedFiles[0]);
-    }
+  const onDrop = useCallback((files: File[]) => {
+    if (files.length > 0) handleFileUpload(files[0]);
   }, [handleFileUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/png': ['.png'],
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/webp': ['.webp'],
-    },
+    accept: { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/webp': ['.webp'] },
     maxSize: maxSizeMB * 1024 * 1024,
     multiple: false,
     disabled: isUploading,
   });
 
-  // Handle camera capture for mobile
-  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleFileUpload(file);
-    }
-  };
-
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Main drop zone */}
+    <div className="upload-zone-container">
+      {/* Lightning flash */}
+      <AnimatePresence>
+        {showLightning && (
+          <motion.div
+            className="lightning"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Main dropzone */}
       <div
         {...getRootProps()}
-        className={`
-          relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
-          transition-all duration-300 ease-in-out
-          ${isDragActive 
-            ? 'border-toxic-green bg-toxic-green/10 scale-105 shadow-lg shadow-toxic-green/50' 
-            : 'border-dark-green hover:border-toxic-green/70 hover:bg-dark-green/20'
-          }
-          ${isUploading ? 'pointer-events-none opacity-50' : ''}
-        `}
+        className={`dropzone ${isDragActive ? 'active' : ''} ${isUploading ? 'uploading' : ''}`}
       >
         <input {...getInputProps()} />
-        
-        {/* Upload icon with spooky animation */}
-        <div className="mb-6">
-          <svg
-            className={`w-20 h-20 mx-auto text-toxic-green transition-transform duration-300 ${
-              isDragActive ? 'scale-125 animate-pulse' : ''
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-        </div>
 
-        {/* Upload text */}
-        <div className="font-mono text-toxic-green">
+        {/* Animated border */}
+        <div className="border-glow" />
+
+        {/* Corner decorations */}
+        <div className="corner corner-tl" />
+        <div className="corner corner-tr" />
+        <div className="corner corner-bl" />
+        <div className="corner corner-br" />
+
+        {/* Content */}
+        <div className="dropzone-content">
           {isUploading ? (
-            <div className="space-y-4">
-              <p className="text-lg animate-pulse">Summoning the spirits...</p>
-              <div className="w-full bg-dark-green rounded-full h-3 overflow-hidden">
-                <div
-                  className="h-full bg-toxic-green transition-all duration-300 ease-out relative"
-                  style={{ width: `${uploadProgress}%` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                </div>
+            <div className="uploading-state">
+              <motion.div
+                className="upload-icon"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+              >
+                🔮
+              </motion.div>
+              <p className="upload-text">Channeling ancient energies...</p>
+              <div className="progress-bar">
+                <motion.div
+                  className="progress-fill"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadProgress}%` }}
+                />
               </div>
-              <p className="text-sm opacity-70">{uploadProgress}% resurrected</p>
+              <p className="progress-text">{uploadProgress}% summoned</p>
             </div>
           ) : isDragActive ? (
-            <p className="text-xl font-bold animate-pulse">Release the ancient artifact...</p>
+            <motion.div
+              className="drag-active-state"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            >
+              <span className="drag-icon">⚡</span>
+              <p className="drag-text">Release the artifact!</p>
+            </motion.div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-lg">Drag & drop your punch card photo here</p>
-              <p className="text-sm opacity-70">or click to select from the crypt</p>
-              <p className="text-xs opacity-50 mt-4">
-                Accepted formats: PNG, JPEG, WEBP (max {maxSizeMB}MB)
-              </p>
+            <div className="idle-state">
+              <motion.div
+                className="upload-icon-container"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <span className="main-icon">📜</span>
+                <span className="ghost-icon">👻</span>
+              </motion.div>
+              <p className="main-text">Drop your punch card here</p>
+              <p className="sub-text">or click to browse the crypt</p>
+              <div className="format-info">
+                <span>PNG</span>
+                <span>•</span>
+                <span>JPEG</span>
+                <span>•</span>
+                <span>WEBP</span>
+                <span>•</span>
+                <span>Max {maxSizeMB}MB</span>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Glowing corners effect when dragging */}
-        {isDragActive && (
-          <>
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-toxic-green animate-pulse" />
-            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-toxic-green animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-toxic-green animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-toxic-green animate-pulse" />
-          </>
-        )}
       </div>
 
-      {/* Mobile camera capture button */}
+      {/* Mobile camera button */}
       {isMobile && !isUploading && (
-        <div className="mt-6">
-          <label
-            htmlFor="camera-capture"
-            className="block w-full py-4 px-6 text-center font-mono text-toxic-green border-2 border-toxic-green rounded-lg cursor-pointer hover:bg-toxic-green/10 transition-colors duration-300 min-h-touch active:bg-toxic-green/20"
-            style={{ minHeight: '44px' }}
-          >
-            <svg
-              className="w-8 h-8 mx-auto mb-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            Capture with Camera
-          </label>
+        <label className="camera-btn">
           <input
-            id="camera-capture"
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={handleCameraCapture}
-            className="hidden"
-            disabled={isUploading}
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+            className="hidden-input"
           />
-        </div>
+          📷 Capture with Camera
+        </label>
       )}
 
       {/* Error message */}
-      {error && (
-        <div className="mt-6 p-4 border-2 border-red-600 bg-red-900/20 rounded-lg animate-shake">
-          <div className="flex items-center space-x-3">
-            <svg
-              className="w-6 h-6 text-red-500 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <p className="font-mono text-red-400 text-sm md:text-base">{error}</p>
-          </div>
-          <button
-            onClick={() => setError(null)}
-            className="mt-3 px-4 py-2 text-sm font-mono text-toxic-green border border-toxic-green rounded hover:bg-toxic-green/10 transition-colors duration-300 active:bg-toxic-green/20 min-h-touch"
-            style={{ minHeight: '44px', minWidth: '44px' }}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            className="error-message"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
           >
-            Try Again
-          </button>
-        </div>
-      )}
+            <span className="error-icon">💀</span>
+            <span className="error-text">{error}</span>
+            <button onClick={() => setError(null)} className="retry-btn">Try Again</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx>{`
+        .upload-zone-container {
+          width: 100%;
+          max-width: 600px;
+          margin: 0 auto;
+          position: relative;
+        }
+
+        .lightning {
+          position: fixed;
+          inset: 0;
+          background: #0f0;
+          z-index: 100;
+          pointer-events: none;
+        }
+
+        .dropzone {
+          position: relative;
+          min-height: 280px;
+          border: 3px dashed #003300;
+          border-radius: 16px;
+          background: linear-gradient(180deg, rgba(0,20,0,0.5) 0%, rgba(0,0,0,0.8) 100%);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          overflow: hidden;
+        }
+
+        .dropzone:hover {
+          border-color: #0f0;
+          box-shadow: 0 0 30px rgba(0,255,0,0.2);
+        }
+
+        .dropzone.active {
+          border-color: #0f0;
+          border-style: solid;
+          background: rgba(0,255,0,0.1);
+          box-shadow: 0 0 50px rgba(0,255,0,0.4), inset 0 0 50px rgba(0,255,0,0.1);
+          transform: scale(1.02);
+        }
+
+        .dropzone.uploading {
+          pointer-events: none;
+          opacity: 0.8;
+        }
+
+        .border-glow {
+          position: absolute;
+          inset: -2px;
+          border-radius: 18px;
+          background: linear-gradient(45deg, transparent, #0f0, transparent);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .dropzone.active .border-glow {
+          opacity: 0.3;
+          animation: rotate-glow 2s linear infinite;
+        }
+
+        @keyframes rotate-glow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .corner {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border-color: #0f0;
+          border-style: solid;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .dropzone.active .corner,
+        .dropzone:hover .corner {
+          opacity: 1;
+        }
+
+        .corner-tl { top: 8px; left: 8px; border-width: 3px 0 0 3px; }
+        .corner-tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; }
+        .corner-bl { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; }
+        .corner-br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; }
+
+        .dropzone-content {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 280px;
+          padding: 2rem;
+          text-align: center;
+        }
+
+        .idle-state, .drag-active-state, .uploading-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .upload-icon-container {
+          position: relative;
+          font-size: 4rem;
+        }
+
+        .main-icon {
+          display: block;
+        }
+
+        .ghost-icon {
+          position: absolute;
+          top: -10px;
+          right: -20px;
+          font-size: 1.5rem;
+          opacity: 0.6;
+        }
+
+        .main-text {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 1.3rem;
+          color: #0f0;
+          text-shadow: 0 0 10px #0f0;
+          margin: 0;
+        }
+
+        .sub-text {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.9rem;
+          color: #003300;
+          margin: 0;
+        }
+
+        .format-info {
+          display: flex;
+          gap: 0.5rem;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.75rem;
+          color: #002200;
+          margin-top: 0.5rem;
+        }
+
+        .drag-icon {
+          font-size: 5rem;
+          filter: drop-shadow(0 0 20px #0f0);
+        }
+
+        .drag-text {
+          font-family: 'Creepster', cursive;
+          font-size: 1.8rem;
+          color: #0f0;
+          text-shadow: 0 0 20px #0f0;
+          margin: 0;
+        }
+
+        .upload-icon {
+          font-size: 4rem;
+        }
+
+        .upload-text {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 1.1rem;
+          color: #0f0;
+          text-shadow: 0 0 10px #0f0;
+          margin: 0;
+        }
+
+        .progress-bar {
+          width: 200px;
+          height: 8px;
+          background: #001100;
+          border-radius: 4px;
+          overflow: hidden;
+          border: 1px solid #003300;
+        }
+
+        .progress-fill {
+          height: 100%;
+          background: #0f0;
+          box-shadow: 0 0 10px #0f0;
+        }
+
+        .progress-text {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.85rem;
+          color: #003300;
+          margin: 0;
+        }
+
+        .camera-btn {
+          display: block;
+          width: 100%;
+          margin-top: 1rem;
+          padding: 1rem;
+          background: transparent;
+          border: 2px solid #0f0;
+          border-radius: 8px;
+          color: #0f0;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 1rem;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .camera-btn:hover {
+          background: rgba(0,255,0,0.1);
+          box-shadow: 0 0 20px rgba(0,255,0,0.3);
+        }
+
+        .hidden-input {
+          display: none;
+        }
+
+        .error-message {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-top: 1rem;
+          padding: 1rem;
+          background: rgba(50,0,0,0.8);
+          border: 2px solid #ff4444;
+          border-radius: 8px;
+        }
+
+        .error-icon {
+          font-size: 1.5rem;
+        }
+
+        .error-text {
+          flex: 1;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.9rem;
+          color: #ff6666;
+        }
+
+        .retry-btn {
+          padding: 0.5rem 1rem;
+          background: transparent;
+          border: 1px solid #ff4444;
+          border-radius: 4px;
+          color: #ff4444;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .retry-btn:hover {
+          background: rgba(255,68,68,0.2);
+        }
+
+        @media (max-width: 768px) {
+          .dropzone { min-height: 220px; }
+          .main-text { font-size: 1.1rem; }
+          .upload-icon-container { font-size: 3rem; }
+        }
+      `}</style>
     </div>
   );
 }

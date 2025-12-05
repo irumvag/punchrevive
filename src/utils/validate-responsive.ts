@@ -13,12 +13,21 @@ import {
 } from './responsive';
 
 /**
+ * Touch target failure info
+ */
+interface TouchTargetFailure {
+  element: HTMLElement;
+  width: number;
+  height: number;
+}
+
+/**
  * Validation result interface
  */
 interface ValidationResult {
   passed: boolean;
   viewport: 'mobile' | 'tablet' | 'desktop';
-  touchTargetFailures: HTMLElement[];
+  touchTargetFailures: TouchTargetFailure[];
   breakpointsValid: boolean;
   summary: string;
 }
@@ -61,7 +70,7 @@ function validateBreakpoints(): boolean {
  */
 function generateSummary(
   viewport: 'mobile' | 'tablet' | 'desktop',
-  failures: HTMLElement[],
+  failures: TouchTargetFailure[],
   breakpointsValid: boolean
 ): string {
   const lines: string[] = [];
@@ -90,12 +99,12 @@ function generateSummary(
       lines.push(`  Status: ✗ ${failures.length} element(s) below minimum size`);
       lines.push('');
       lines.push('  Failed Elements:');
-      failures.forEach((element, index) => {
-        const rect = element.getBoundingClientRect();
+      failures.forEach((failure, index) => {
+        const { element, width, height } = failure;
         const tag = element.tagName.toLowerCase();
         const id = element.id ? `#${element.id}` : '';
         const classes = element.className ? `.${element.className.split(' ').join('.')}` : '';
-        lines.push(`    ${index + 1}. <${tag}${id}${classes}> - ${Math.round(rect.width)}x${Math.round(rect.height)}px`);
+        lines.push(`    ${index + 1}. <${tag}${id}${classes}> - ${Math.round(width)}x${Math.round(height)}px`);
       });
     }
   } else {

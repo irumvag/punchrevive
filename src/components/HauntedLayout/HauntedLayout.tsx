@@ -1,119 +1,171 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import type { HauntedLayoutProps } from '@/src/types/ui.types';
 
 /**
- * HauntedLayout Component
- * 
- * Provides the haunted laboratory background and theme wrapper for all pages.
- * Features cobwebs, dusty CRTs, scattered papers, and glowing vials as background elements.
- * 
- * Requirements: 8.1, 8.2, 8.3, 8.4
+ * HauntedLayout - Immersive haunted laboratory environment
+ * Matches mockup: dark desk, CRT, cobwebs, papers, lamp, vials
  */
 export default function HauntedLayout({
   children,
   showCobwebs = true,
   glowIntensity = 'medium',
 }: HauntedLayoutProps) {
-  // Map glow intensity to opacity values
-  const glowOpacity = {
-    low: 0.3,
-    medium: 0.5,
-    high: 0.7,
-  }[glowIntensity];
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; duration: number }>>([]);
+  const [lightningFlash, setLightningFlash] = useState(false);
+
+  useEffect(() => {
+    // Create floating dust particles
+    const dust = Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      duration: Math.random() * 15 + 10,
+    }));
+    setParticles(dust);
+  }, []);
+
+  // Random lightning
+  useEffect(() => {
+    const triggerLightning = () => {
+      if (Math.random() > 0.7) {
+        setLightningFlash(true);
+        setTimeout(() => setLightningFlash(false), 100);
+        setTimeout(() => {
+          if (Math.random() > 0.5) {
+            setLightningFlash(true);
+            setTimeout(() => setLightningFlash(false), 80);
+          }
+        }, 150);
+      }
+    };
+    const interval = setInterval(triggerLightning, 10000 + Math.random() * 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const glowOpacity = { low: 0.2, medium: 0.4, high: 0.6 }[glowIntensity];
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-haunted-black">
-      {/* Haunted laboratory background layers */}
-      <div className="fixed inset-0 z-0">
-        {/* Base gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-dark-green/20 to-haunted-black" />
-        
-        {/* Dusty CRT monitors scattered in background */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-24 border-2 border-toxic-green/30 rounded-sm transform -rotate-12">
-            <div className="w-full h-full bg-toxic-green/5 animate-pulse" style={{ animationDuration: '3s' }} />
-          </div>
-          <div className="absolute top-40 right-20 w-40 h-28 border-2 border-toxic-green/30 rounded-sm transform rotate-6">
-            <div className="w-full h-full bg-toxic-green/5 animate-pulse" style={{ animationDuration: '4s' }} />
-          </div>
-          <div className="absolute bottom-32 left-1/4 w-36 h-26 border-2 border-toxic-green/30 rounded-sm transform rotate-3">
-            <div className="w-full h-full bg-toxic-green/5 animate-pulse" style={{ animationDuration: '5s' }} />
-          </div>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      position: 'relative',
+      overflow: 'hidden',
+      background: '#000',
+    }}>
+      {/* Lightning flash */}
+      {lightningFlash && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 255, 0, 0.15)',
+          zIndex: 100,
+          pointerEvents: 'none',
+        }} />
+      )}
 
-        {/* Scattered papers */}
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute top-1/4 left-1/3 w-20 h-24 bg-dark-green/40 transform -rotate-45 border border-toxic-green/20" />
-          <div className="absolute top-2/3 right-1/4 w-16 h-20 bg-dark-green/40 transform rotate-12 border border-toxic-green/20" />
-          <div className="absolute bottom-1/4 left-1/2 w-18 h-22 bg-dark-green/40 transform -rotate-12 border border-toxic-green/20" />
-        </div>
+      {/* Background image - haunted lab */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundImage: 'url(/haunted-lab-bg.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center bottom',
+        backgroundRepeat: 'no-repeat',
+        zIndex: 0,
+      }} />
 
-        {/* Glowing vials */}
-        <div className="absolute inset-0" style={{ opacity: glowOpacity }}>
-          <div className="absolute top-20 right-1/3 w-4 h-8 bg-toxic-green rounded-full blur-sm animate-pulse" style={{ animationDuration: '2s' }} />
-          <div className="absolute bottom-40 left-1/4 w-3 h-6 bg-toxic-green rounded-full blur-sm animate-pulse" style={{ animationDuration: '2.5s' }} />
-          <div className="absolute top-1/2 right-1/4 w-5 h-10 bg-toxic-green rounded-full blur-sm animate-pulse" style={{ animationDuration: '3s' }} />
-        </div>
+      {/* Dark overlay for readability */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.7) 100%)',
+        zIndex: 1,
+      }} />
 
-        {/* Cobwebs */}
-        {showCobwebs && (
-          <div className="absolute inset-0 opacity-20 pointer-events-none">
-            {/* Top-left cobweb */}
-            <svg className="absolute top-0 left-0 w-32 h-32" viewBox="0 0 100 100">
-              <path
-                d="M 0 0 L 50 30 L 100 0 M 0 0 L 30 50 L 0 100 M 0 0 L 40 40 M 20 0 L 30 30 M 0 20 L 30 30"
-                stroke="currentColor"
-                strokeWidth="0.5"
-                fill="none"
-                className="text-toxic-green/60"
-              />
-            </svg>
-            
-            {/* Top-right cobweb */}
-            <svg className="absolute top-0 right-0 w-32 h-32 transform scale-x-[-1]" viewBox="0 0 100 100">
-              <path
-                d="M 0 0 L 50 30 L 100 0 M 0 0 L 30 50 L 0 100 M 0 0 L 40 40 M 20 0 L 30 30 M 0 20 L 30 30"
-                stroke="currentColor"
-                strokeWidth="0.5"
-                fill="none"
-                className="text-toxic-green/60"
-              />
-            </svg>
+      {/* CRT ambient glow */}
+      <div style={{
+        position: 'fixed',
+        top: '20%',
+        left: '5%',
+        width: '400px',
+        height: '300px',
+        background: `radial-gradient(ellipse, rgba(0,255,0,${glowOpacity * 0.15}) 0%, transparent 70%)`,
+        pointerEvents: 'none',
+        zIndex: 2,
+      }} />
 
-            {/* Bottom-left cobweb */}
-            <svg className="absolute bottom-0 left-0 w-24 h-24 transform scale-y-[-1]" viewBox="0 0 100 100">
-              <path
-                d="M 0 0 L 50 30 L 100 0 M 0 0 L 30 50 L 0 100 M 0 0 L 40 40"
-                stroke="currentColor"
-                strokeWidth="0.5"
-                fill="none"
-                className="text-toxic-green/60"
-              />
-            </svg>
-          </div>
-        )}
+      {/* Scanlines */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.02) 2px, rgba(0,255,0,0.02) 4px)',
+        pointerEvents: 'none',
+        zIndex: 50,
+      }} />
 
-        {/* Scanline effect for CRT aesthetic */}
-        <div className="absolute inset-0 pointer-events-none opacity-5">
-          <div
-            className="w-full h-full"
-            style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #0f0 2px, #0f0 4px)',
-            }}
-          />
-        </div>
+      {/* Vignette */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(0,0,0,0.8) 100%)',
+        pointerEvents: 'none',
+        zIndex: 40,
+      }} />
 
-        {/* Vignette effect */}
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-haunted-black opacity-60" />
-      </div>
+      {/* Floating dust particles */}
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          style={{
+            position: 'fixed',
+            left: `${p.x}%`,
+            width: p.size,
+            height: p.size,
+            background: '#0f0',
+            borderRadius: '50%',
+            opacity: 0.3,
+            zIndex: 5,
+            filter: 'blur(1px)',
+          }}
+          animate={{
+            y: [0, -1000],
+            opacity: [0.1, 0.4, 0.1],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: 'linear',
+            delay: p.id * 0.5,
+          }}
+        />
+      ))}
 
-      {/* Content container */}
-      <div className="relative z-10 min-h-screen">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </div>
+      {/* Cobwebs overlay */}
+      {showCobwebs && (
+        <>
+          <svg style={{ position: 'fixed', top: 0, left: 0, width: '250px', height: '250px', zIndex: 10, opacity: 0.2 }} viewBox="0 0 100 100" fill="none">
+            <path d="M0 0 Q50 30 100 0" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 0 Q30 50 0 100" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 0 L60 60" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 20 Q30 35 20 0" stroke="#0f0" strokeWidth="0.2"/>
+            <path d="M0 40 Q40 50 40 0" stroke="#0f0" strokeWidth="0.2"/>
+            <path d="M20 0 Q35 30 0 20" stroke="#0f0" strokeWidth="0.2"/>
+          </svg>
+          <svg style={{ position: 'fixed', top: 0, right: 0, width: '250px', height: '250px', zIndex: 10, opacity: 0.2, transform: 'scaleX(-1)' }} viewBox="0 0 100 100" fill="none">
+            <path d="M0 0 Q50 30 100 0" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 0 Q30 50 0 100" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 0 L60 60" stroke="#0f0" strokeWidth="0.3"/>
+            <path d="M0 20 Q30 35 20 0" stroke="#0f0" strokeWidth="0.2"/>
+          </svg>
+        </>
+      )}
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 20, minHeight: '100vh' }}>
+        {children}
       </div>
     </div>
   );

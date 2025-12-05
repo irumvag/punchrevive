@@ -598,9 +598,12 @@
     - Create comparison table: vibe-coding vs spec-driven vs hooks (with quantified time savings)
     - _Requirements: 11.4, 11.5, 15.1, 15.2, 15.3, 15.4, 15.5, 18.5_
 
-- [ ] 23. Ensure .kiro directory is visible in repository
+- [x] 23. Ensure .kiro directory is visible in repository
 
-  - [-] 23.1 Configure Git to include .kiro directory
+
+
+  - [x] 23.1 Configure Git to include .kiro directory
+
 
 
 
@@ -609,9 +612,14 @@
     - Add README in .kiro directory explaining structure
     - _Requirements: 18.1, 18.2, 18.3_
 
-- [ ] 24. Create demo video and final polish
+- [x] 24. Create demo video and final polish
 
-  - [ ] 24.1 Record 3-minute demo video
+
+
+
+  - [x] 24.1 Record 3-minute demo video
+
+
 
     - Show real punch card photo upload → resurrection
     - Demonstrate Virtual Puncher in action
@@ -619,7 +627,9 @@
     - Highlight spooky UI, sounds, and certificate
     - _Requirements: All requirements (demo showcase)_
   
-  - [ ] 24.2 Final testing and bug fixes
+  - [x] 24.2 Final testing and bug fixes
+
+
 
     - Test complete user flows on multiple devices
     - Verify all animations and sounds work
@@ -627,6 +637,9 @@
     - Validate all shareable links work correctly
     - _Requirements: All requirements_
 
-- [ ] 25. Final Checkpoint - Complete end-to-end testing
+- [x] 25. Final Checkpoint - Complete end-to-end testing
+
+
+
 
   - Ensure all tests pass, ask the user if questions arise.

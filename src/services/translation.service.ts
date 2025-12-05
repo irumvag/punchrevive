@@ -1,6 +1,9 @@
 /**
  * AI Translation Service
- * Translates legacy code to modern languages using OpenAI GPT-4o (primary) and Claude 3.5 (fallback)
+ * Translates legacy code to modern languages using:
+ * - Ollama Llama 3 (local, primary)
+ * - OpenAI GPT-4o (fallback)
+ * - Claude 3.5 (fallback)
  */
 
 import OpenAI from 'openai';
@@ -11,13 +14,9 @@ import type {
   BugFix,
   TranslationResult,
   BugType,
-  BugSeverity,
 } from '../types/punch-card.types';
 import { getSpookyMessage, DEFAULT_BUG_SEVERITY } from '../utils/bug-patterns';
 
-/**
- * LLM response structure
- */
 interface LLMTranslationResponse {
   translatedCode: string;
   bugs: Array<{
@@ -30,21 +29,17 @@ interface LLMTranslationResponse {
   }>;
 }
 
-/**
- * Translation service configuration
- */
 interface TranslationServiceConfig {
   openaiApiKey?: string;
   claudeApiKey?: string;
+  ollamaBaseUrl?: string;
+  ollamaModel?: string;
   maxRetries?: number;
   timeout?: number;
 }
 
-// Note: Spooky messages and severity mappings are now imported from bug-patterns.ts
-
 /**
- * Translation Service
- * Handles AI-powered code translation and bug fixing
+ * Translation Service - Handles AI-powered code translation and bug fixing
  */
 export class TranslationService {
   private openai: OpenAI | null = null;
@@ -55,22 +50,18 @@ export class TranslationService {
     this.config = {
       openaiApiKey: config.openaiApiKey || process.env.OPENAI_API_KEY || '',
       claudeApiKey: config.claudeApiKey || process.env.CLAUDE_API_KEY || '',
+      ollamaBaseUrl: config.ollamaBaseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      ollamaModel: config.ollamaModel || process.env.OLLAMA_MODEL || 'llama3:70b',
       maxRetries: config.maxRetries || 3,
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 60000,
     };
 
-    // Initialize OpenAI client if API key is available
     if (this.config.openaiApiKey) {
-      this.openai = new OpenAI({
-        apiKey: this.config.openaiApiKey,
-      });
+      this.openai = new OpenAI({ apiKey: this.config.openaiApiKey });
     }
 
-    // Initialize Anthropic client if API key is available
     if (this.config.claudeApiKey) {
-      this.anthropic = new Anthropic({
-        apiKey: this.config.claudeApiKey,
-      });
+      this.anthropic = new Anthropic({ apiKey: this.config.claudeApiKey });
     }
   }
 
@@ -82,12 +73,22 @@ export class TranslationService {
     sourceLang: LegacyLanguage,
     targetLang: ModernLanguage
   ): Promise<TranslationResult> {
-    // Try OpenAI first, then Claude as fallback
     let result: LLMTranslationResponse | null = null;
     let lastError: Error | null = null;
 
-    if (this.openai) {
+    // Try Ollama first (local Llama 3)
+    try {
+      console.log('🧛 Attempting resurrection via Ollama Llama 3...');
+      result = await this.translateWithOllama(sourceCode, sourceLang, targetLang);
+    } catch (error) {
+      console.error('Ollama translation failed:', error);
+      lastError = error as Error;
+    }
+
+    // Fallback to OpenAI
+    if (!result && this.openai) {
       try {
+        console.log('🧛 Falling back to OpenAI GPT-4o...');
         result = await this.translateWithOpenAI(sourceCode, sourceLang, targetLang);
       } catch (error) {
         console.error('OpenAI translation failed:', error);
@@ -95,8 +96,10 @@ export class TranslationService {
       }
     }
 
+    // Fallback to Claude
     if (!result && this.anthropic) {
       try {
+        console.log('🧛 Falling back to Claude 3.5...');
         result = await this.translateWithClaude(sourceCode, sourceLang, targetLang);
       } catch (error) {
         console.error('Claude translation failed:', error);
@@ -105,27 +108,19 @@ export class TranslationService {
     }
 
     if (!result) {
-      throw new Error(
-        `The AI spirits are unavailable - ${lastError?.message || 'please try again'}`
-      );
+      throw new Error(`The AI spirits are unavailable - ${lastError?.message || 'please try again'}`);
     }
 
-    // Convert bugs to full BugFix objects with spooky messages
     const bugs: BugFix[] = result.bugs.map((bug, index) => ({
       id: `bug-${Date.now()}-${index}`,
       type: bug.type,
       severity: DEFAULT_BUG_SEVERITY[bug.type],
-      location: {
-        line: bug.line,
-        column: bug.column,
-        snippet: bug.snippet,
-      },
+      location: { line: bug.line, column: bug.column, snippet: bug.snippet },
       description: bug.description,
       spookyMessage: getSpookyMessage(bug.type),
       fix: bug.fix,
     }));
 
-    // Generate Exorcism Report
     const exorcismReport = this.generateExorcismReport(bugs);
 
     return {
@@ -137,6 +132,44 @@ export class TranslationService {
   }
 
   /**
+   * Translate using Ollama (local Llama 3)
+   */
+  private async translateWithOllama(
+    sourceCode: string,
+    sourceLang: LegacyLanguage,
+    targetLang: ModernLanguage
+  ): Promise<LLMTranslationResponse> {
+    const systemPrompt = this.buildSystemPrompt(sourceLang, targetLang);
+    const userPrompt = this.buildUserPrompt(sourceCode, sourceLang, targetLang);
+
+    const response = await fetch(`${this.config.ollamaBaseUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.config.ollamaModel,
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
+        stream: false,
+        format: 'json',
+        options: {
+          temperature: 0.3,
+          num_predict: 4096,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.response) {
+      throw new Error('Empty response from Ollama');
+    }
+
+    return this.parseResponse(data.response);
+  }
+
+  /**
    * Translate using OpenAI GPT-4o
    */
   private async translateWithOpenAI(
@@ -144,9 +177,7 @@ export class TranslationService {
     sourceLang: LegacyLanguage,
     targetLang: ModernLanguage
   ): Promise<LLMTranslationResponse> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
-    }
+    if (!this.openai) throw new Error('OpenAI client not initialized');
 
     const systemPrompt = this.buildSystemPrompt(sourceLang, targetLang);
     const userPrompt = this.buildUserPrompt(sourceCode, sourceLang, targetLang);
@@ -157,14 +188,12 @@ export class TranslationService {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.3, // Lower temperature for more consistent code generation
+      temperature: 0.3,
       response_format: { type: 'json_object' },
     });
 
     const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('Empty response from OpenAI');
-    }
+    if (!content) throw new Error('Empty response from OpenAI');
 
     return this.parseResponse(content);
   }
@@ -177,9 +206,7 @@ export class TranslationService {
     sourceLang: LegacyLanguage,
     targetLang: ModernLanguage
   ): Promise<LLMTranslationResponse> {
-    if (!this.anthropic) {
-      throw new Error('Anthropic client not initialized');
-    }
+    if (!this.anthropic) throw new Error('Anthropic client not initialized');
 
     const systemPrompt = this.buildSystemPrompt(sourceLang, targetLang);
     const userPrompt = this.buildUserPrompt(sourceCode, sourceLang, targetLang);
@@ -189,25 +216,15 @@ export class TranslationService {
       max_tokens: 4096,
       temperature: 0.3,
       system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
     });
 
     const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
+    if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
     return this.parseResponse(content.text);
   }
 
-  /**
-   * Build system prompt for LLM
-   */
   private buildSystemPrompt(sourceLang: LegacyLanguage, targetLang: ModernLanguage): string {
     return `You are a code archaeologist specializing in resurrecting dead code from vintage punch cards.
 Your task is to translate legacy code to modern languages while preserving original logic.
@@ -236,14 +253,7 @@ Rules:
 If no bugs are found, return an empty bugs array.`;
   }
 
-  /**
-   * Build user prompt for LLM
-   */
-  private buildUserPrompt(
-    sourceCode: string,
-    sourceLang: LegacyLanguage,
-    targetLang: ModernLanguage
-  ): string {
+  private buildUserPrompt(sourceCode: string, sourceLang: LegacyLanguage, targetLang: ModernLanguage): string {
     return `Translate this ${sourceLang} code to ${targetLang}:
 
 \`\`\`${sourceLang.toLowerCase()}
@@ -253,23 +263,15 @@ ${sourceCode}
 Detect and fix all bugs. Return JSON with translatedCode and bugs array.`;
   }
 
-  /**
-   * Parse LLM response
-   */
   private parseResponse(content: string): LLMTranslationResponse {
     try {
-      // Try to extract JSON from markdown code blocks if present
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
-                       content.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : content;
-      
       const parsed = JSON.parse(jsonStr);
 
-      // Validate response structure
       if (!parsed.translatedCode || typeof parsed.translatedCode !== 'string') {
         throw new Error('Invalid response: missing translatedCode');
       }
-
       if (!Array.isArray(parsed.bugs)) {
         throw new Error('Invalid response: bugs must be an array');
       }
@@ -281,13 +283,8 @@ Detect and fix all bugs. Return JSON with translatedCode and bugs array.`;
     }
   }
 
-  /**
-   * Generate Exorcism Report from bugs
-   */
   private generateExorcismReport(bugs: BugFix[]): string {
-    if (bugs.length === 0) {
-      return '✨ No demons detected - code is pure ✨';
-    }
+    if (bugs.length === 0) return '✨ No demons detected - code is pure ✨';
 
     const lines = [
       '🧛 EXORCISM REPORT 🧛',
@@ -305,51 +302,25 @@ Detect and fix all bugs. Return JSON with translatedCode and bugs array.`;
     });
 
     lines.push('The code has been purified and is ready for resurrection! ⚡');
-
     return lines.join('\n');
   }
 
-  /**
-   * Calculate confidence score for translation
-   */
   private calculateConfidence(translatedCode: string, bugs: BugFix[]): number {
-    // Base confidence
     let confidence = 0.9;
-
-    // Reduce confidence for each critical bug found
     const criticalBugs = bugs.filter((b) => b.severity === 'critical').length;
     confidence -= criticalBugs * 0.1;
-
-    // Reduce confidence for very short or very long code (might indicate issues)
-    if (translatedCode.length < 10) {
-      confidence -= 0.2;
-    }
-
-    // Ensure confidence is between 0 and 1
+    if (translatedCode.length < 10) confidence -= 0.2;
     return Math.max(0, Math.min(1, confidence));
   }
 
-  /**
-   * Detect bugs in source code (standalone method)
-   */
   async detectBugs(sourceCode: string): Promise<BugFix[]> {
-    // This is a simplified version - in practice, bugs are detected during translation
-    // For now, return empty array as bugs are detected in the translate method
     return [];
   }
 
-  /**
-   * Fix bugs in code (standalone method)
-   */
   async fixBugs(code: string, bugs: BugFix[]): Promise<string> {
-    // This is a simplified version - in practice, bugs are fixed during translation
-    // For now, return the code as-is since fixing happens in the translate method
     return code;
   }
 }
 
-// Export singleton instance
 export const translationService = new TranslationService();
-
-// Export class for testing
 export default TranslationService;
