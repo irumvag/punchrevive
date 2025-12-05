@@ -78,7 +78,7 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
   const loadSavedCards = useCallback(async () => {
     setLoadingSavedCards(true);
     try {
-      const response = await fetch('/api/cards?type=line-based');
+      const response = await fetch('/api/cards?type=virtual');
       if (!response.ok) throw new Error('Failed to load cards');
       const result = await response.json();
       setSavedCards(result.cards || []);
@@ -131,6 +131,39 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
     setDecodedText(decoded);
     toast.success('Card decoded!');
   }, [grid]);
+
+  const saveCard = useCallback(async () => {
+    const cardName = prompt('Enter a name for this punch card:');
+    if (!cardName || !cardName.trim()) {
+      toast.error('Card name is required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: cardName.trim(),
+          grid_data: grid,
+          rows: 12,
+          cols: 80,
+          original_text: decodedText,
+          card_type: 'virtual',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save card');
+
+      const result = await response.json();
+      toast.success(`Card saved: ${cardName}`);
+
+      await loadSavedCards();
+    } catch (error) {
+      console.error('Error saving card:', error);
+      toast.error('Failed to save card');
+    }
+  }, [grid, decodedText, loadSavedCards]);
 
   useEffect(() => {
     loadSavedCards();
@@ -362,6 +395,26 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
             🔍 Decode Text
           </motion.button>
         )}
+        <motion.button
+          onClick={saveCard}
+          disabled={isSubmitting}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            fontFamily: 'IBM Plex Mono, monospace',
+            fontSize: '0.9rem',
+            padding: '0.875rem 1.5rem',
+            border: '2px solid #00ff88',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            background: 'transparent',
+            color: '#00ff88',
+            minHeight: '48px',
+          }}
+        >
+          💾 Save Card
+        </motion.button>
         <motion.button
           onClick={handleSubmit}
           disabled={isSubmitting}
