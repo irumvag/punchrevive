@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { lineBasedEncodingService, LINE_BASED_DEMOS, type LineBasedDeck } from '@/src/services/line-based-encoding.service';
+import toast from 'react-hot-toast';
 
 interface LineBasedPuncherProps {
   onSubmit: (deck: LineBasedDeck) => void;
@@ -13,6 +14,7 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [deck, setDeck] = useState<LineBasedDeck | null>(null);
+  const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null);
 
   const handleLoadDemo = (demoKey: keyof typeof LINE_BASED_DEMOS) => {
     const demoCode = LINE_BASED_DEMOS[demoKey];
@@ -40,6 +42,48 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
   const handleResurrect = () => {
     if (!deck) return;
     onSubmit(deck);
+  };
+
+  const handleSaveCard = async (cardIndex: number) => {
+    if (!deck) return;
+
+    const card = deck.cards[cardIndex];
+    setSavingCardIndex(cardIndex);
+
+    try {
+      const grid: boolean[][] = [];
+      for (let row = 0; row < 8; row++) {
+        grid[row] = [];
+        for (let col = 0; col < 80; col++) {
+          const bitIndex = row * 80 + col;
+          grid[row][col] = card.bits[bitIndex] === '1';
+        }
+      }
+
+      const response = await fetch('/api/cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `Line ${card.column}: ${(card.preview || '').slice(0, 30)}`,
+          grid_data: grid,
+          rows: 8,
+          cols: 80,
+          original_text: card.preview || '',
+          card_type: 'line-based',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save card');
+
+      const result = await response.json();
+      toast.success(`Card #${card.column} saved!`);
+      return result.card.id;
+    } catch (error) {
+      console.error('Error saving card:', error);
+      toast.error('Failed to save card');
+    } finally {
+      setSavingCardIndex(null);
+    }
   };
 
   const stats = deck ? lineBasedEncodingService.getDeckStats(deck) : null;
@@ -206,9 +250,20 @@ export default function LineBasedPuncher({ onSubmit }: LineBasedPuncherProps) {
                         <span className="text-sm font-mono text-toxic-green font-bold">
                           Card #{card.column}
                         </span>
-                        <span className="text-xs font-mono text-dark-green">
-                          8 rows × 80 columns
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-dark-green">
+                            8 rows × 80 columns
+                          </span>
+                          <motion.button
+                            onClick={() => handleSaveCard(index)}
+                            disabled={savingCardIndex === index}
+                            className="px-2 py-1 text-xs font-mono border border-toxic-green/50 rounded bg-black/40 text-toxic-green/70 hover:text-toxic-green hover:border-toxic-green transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {savingCardIndex === index ? '💾...' : '💾 Save'}
+                          </motion.button>
+                        </div>
                       </div>
 
                       {/* Line Preview */}

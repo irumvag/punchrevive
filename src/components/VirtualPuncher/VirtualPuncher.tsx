@@ -4,6 +4,16 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { VirtualPuncherProps } from '@/src/types/ui.types';
 import { DEMO_PATTERNS, patternToGrid } from '@/src/utils/demo-patterns';
+import toast from 'react-hot-toast';
+
+interface SavedCard {
+  id: string;
+  name: string;
+  grid_data: boolean[][];
+  rows: number;
+  cols: number;
+  original_text: string | null;
+}
 
 export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPuncherProps) {
   const [selectedDemo, setSelectedDemo] = useState(0);
@@ -16,6 +26,10 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
 
   const [easterEggTriggered, setEasterEggTriggered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [loadingSavedCards, setLoadingSavedCards] = useState(false);
+  const [decodedText, setDecodedText] = useState<string | null>(null);
+  const [loadedCardName, setLoadedCardName] = useState<string | null>(null);
 
   const playPunchSound = useCallback(() => {
     try {
@@ -60,6 +74,67 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
     setIsSubmitting(true);
     try { await onSubmit(grid); } finally { setIsSubmitting(false); }
   }, [grid, onSubmit]);
+
+  const loadSavedCards = useCallback(async () => {
+    setLoadingSavedCards(true);
+    try {
+      const response = await fetch('/api/cards?type=line-based');
+      if (!response.ok) throw new Error('Failed to load cards');
+      const result = await response.json();
+      setSavedCards(result.cards || []);
+    } catch (error) {
+      console.error('Error loading saved cards:', error);
+      toast.error('Failed to load saved cards');
+    } finally {
+      setLoadingSavedCards(false);
+    }
+  }, []);
+
+  const loadSavedCard = useCallback((cardId: string) => {
+    const card = savedCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    const newGrid: boolean[][] = Array.from({ length: 12 }, () => Array(80).fill(false));
+
+    for (let row = 0; row < card.rows && row < 12; row++) {
+      for (let col = 0; col < card.cols && col < 80; col++) {
+        newGrid[row][col] = card.grid_data[row]?.[col] || false;
+      }
+    }
+
+    setGrid(newGrid);
+    setLoadedCardName(card.name);
+    setDecodedText(null);
+    toast.success(`Loaded: ${card.name}`);
+  }, [savedCards]);
+
+  const decodeCard = useCallback(() => {
+    const bits: string[] = [];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 80; col++) {
+        bits.push(grid[row]?.[col] ? '1' : '0');
+      }
+    }
+
+    const bitString = bits.join('');
+    const chars: string[] = [];
+
+    for (let i = 0; i < bitString.length; i += 8) {
+      const byte = bitString.slice(i, i + 8);
+      const charCode = parseInt(byte, 2);
+      if (charCode > 0) {
+        chars.push(String.fromCharCode(charCode));
+      }
+    }
+
+    const decoded = chars.join('').replace(/\0+$/, '');
+    setDecodedText(decoded);
+    toast.success('Card decoded!');
+  }, [grid]);
+
+  useEffect(() => {
+    loadSavedCards();
+  }, [loadSavedCards]);
 
   useEffect(() => {
     for (let col = 0; col < 78; col++) {
@@ -182,6 +257,47 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
         </select>
       </div>
 
+      {/* Saved Cards Selector */}
+      {savedCards.length > 0 && (
+        <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <label style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.85rem', color: '#0f0', marginRight: '0.5rem' }}>
+            💾 Load Saved Card:
+          </label>
+          <select
+            onChange={(e) => e.target.value && loadSavedCard(e.target.value)}
+            disabled={isSubmitting || loadingSavedCards}
+            style={{
+              fontFamily: 'IBM Plex Mono, monospace',
+              fontSize: '0.9rem',
+              padding: '0.5rem 1rem',
+              border: '2px solid #0f0',
+              borderRadius: '6px',
+              background: '#000',
+              color: '#0f0',
+              cursor: 'pointer',
+            }}
+            defaultValue=""
+          >
+            <option value="">-- Select a saved card --</option>
+            {savedCards.map((card) => (
+              <option key={card.id} value={card.id}>
+                {card.name}
+              </option>
+            ))}
+          </select>
+          {loadedCardName && (
+            <div style={{
+              marginTop: '0.5rem',
+              fontSize: '0.75rem',
+              color: '#0f0',
+              fontFamily: 'IBM Plex Mono, monospace'
+            }}>
+              Currently loaded: {loadedCardName}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Controls */}
       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
         <motion.button
@@ -224,6 +340,28 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
         >
           🧛 Reload Demo
         </motion.button>
+        {loadedCardName && (
+          <motion.button
+            onClick={decodeCard}
+            disabled={isSubmitting}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              fontFamily: 'IBM Plex Mono, monospace',
+              fontSize: '0.9rem',
+              padding: '0.875rem 1.5rem',
+              border: '2px solid #0f0',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              background: '#001100',
+              color: '#0f0',
+              minHeight: '48px',
+            }}
+          >
+            🔍 Decode Text
+          </motion.button>
+        )}
         <motion.button
           onClick={handleSubmit}
           disabled={isSubmitting}
@@ -266,6 +404,42 @@ export default function VirtualPuncher({ onSubmit, initialPattern }: VirtualPunc
           }}
         >
           🔥 THE BEAST HAS BEEN SUMMONED 🔥
+        </motion.div>
+      )}
+
+      {decodedText && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            background: '#001100',
+            border: '2px solid #0f0',
+            borderRadius: '8px',
+            boxShadow: '0 0 20px rgba(0,255,0,0.3)',
+          }}
+        >
+          <h3 style={{
+            fontFamily: 'IBM Plex Mono, monospace',
+            fontSize: '1rem',
+            color: '#0f0',
+            marginBottom: '0.75rem',
+            textAlign: 'center',
+          }}>
+            📜 Decoded Text
+          </h3>
+          <pre style={{
+            fontFamily: 'IBM Plex Mono, monospace',
+            fontSize: '0.9rem',
+            color: '#0f0',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            margin: 0,
+            textShadow: '0 0 5px #0f0',
+          }}>
+            {decodedText}
+          </pre>
         </motion.div>
       )}
     </div>
